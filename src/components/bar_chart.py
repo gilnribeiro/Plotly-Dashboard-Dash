@@ -1,11 +1,21 @@
 from dash import Dash, dcc, html
 import plotly.express as px
 from . import ids
-
+from dash.dependencies import Input, Output
 
 MEDAL_DATA = px.data.medals_long()
 
 
 def render(app: Dash) -> html.Div:
-    fig = px.bar(MEDAL_DATA, x="medal", y="count", color="nation", text="nation")
-    return html.Div(dcc.Graph(figure=fig), ids.BAR_CHART)
+    @app.callback(
+        Output(ids.BAR_CHART, "children"), Input(ids.NATION_DROPDOWN, "value")
+    )
+    def update_bar_chart(nations: list[str]) -> html.Div:
+        filtered_data = MEDAL_DATA[MEDAL_DATA["nation"].isin(nations)]
+
+        if filtered_data.shape[0] == 0:
+            return html.Div("No data selected.")
+        fig = px.bar(filtered_data, x="medal", y="count", color="nation", text="nation")
+        return html.Div(dcc.Graph(figure=fig), ids.BAR_CHART)
+
+    return html.Div(id=ids.BAR_CHART)
